@@ -266,7 +266,7 @@
                 </ul>
             </div>
             <div style="font-size: 0.8rem; color: var(--meta-color); padding: 0.5rem;">
-                <p>※データはGitHub Actionsにより定期的に更新されます。制作中</p>
+                <p>※JSONデータがない場合、GitHub APIから直接取得します。</p>
             </div>
         </aside>
 
@@ -283,7 +283,6 @@
     <!-- Application Logic -->
     <script>
         // --- Configuration ---
-        // 自分のリポジトリ情報に書き換えてください
         const CONFIG = {
             OWNER: 'Xenoah',
             REPO: 'XNH_BBS',
@@ -296,21 +295,6 @@
             { id: 'gijutsu', name: '技術', desc: 'プログラミング等の技術話' },
             { id: 'seisaku', name: '制作', desc: '作ったものを晒す板' },
             { id: 'kokuchi', name: '告知', desc: '運営からのお知らせ' },
-        ];
-
-        const MOCK_THREADS = [
-            {
-                number: 101,
-                title: '【Welcome】この掲示板の使い方',
-                user: { login: 'admin' },
-                labels: ['board:告知', 'pinned'],
-                state: 'open',
-                comments: 0,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-                body: 'ここはGitHub Issuesを利用した掲示板です。\n\n### 使い方\n1. 左のメニューから板を選びます。\n2. 「スレを立てる」ボタンからGitHubに飛び、Issueを作成します。\n3. 自動的にここに反映されます（反映には時間がかかります）。',
-                commentList: []
-            }
         ];
 
         // --- State Management ---
@@ -334,7 +318,6 @@
             if (!text) return '';
             if (window.marked) {
                 let html = window.marked.parse(text);
-                // Convert anchor links >>123
                 html = html.replace(/&gt;&gt;(\d+)/g, '<a href="#res$1" class="anchor-link" onclick="scrollToRes($1); return false;">>>$1</a>');
                 return html;
             }
@@ -358,39 +341,122 @@
 
         // --- API Service ---
         const api = {
+            // Static file fetch
             async fetchJson(path) {
                 try {
-                    const res = await fetch(`data/${path}.json?t=${Date.now()}`); // Simple cache buster
+                    const res = await fetch(`data/${path}.json?t=${Date.now()}`); 
                     if (!res.ok) throw new Error(res.statusText);
                     return await res.json();
                 } catch (e) {
-                    console.log(`[Data Fetch Info] Could not load ${path}. Using mock data if available.`);
                     return null;
                 }
             },
+
+            // GitHub API fetch (Real-time fallback)
+            async fetchGitHubIssues(params = '') {
+                try {
+                    const res = await fetch(`https://api.github.com/repos/${CONFIG.OWNER}/${CONFIG.REPO}/issues?state=open&per_page=100${params}`);
+                    if (!res.ok) throw new Error('GitHub API Error');
+                    const issues = await res.json();
+                    
+                    // Normalize to app format
+                    return issues.map(issue => ({
+                        number: issue.number,
+                        title: issue.title,
+                        user: { login: issue.user.login },
+                        // Labels can be strings or objects depending on API vs JSON
+                        labels: issue.labels.map(l => typeof l === 'string' ? l : l.name),
+                        state: issue.state,
+                        comments: issue.comments,
+                        created_at: issue.created_at,
+                        updated_at: issue.updated_at,
+                        body: issue.body || ''
+                    }));
+                } catch (e) {
+                    console.error(e);
+                    return [];
+                }
+            },
+
+            async fetchGitHubComments(number) {
+                try {
+                    const res = await fetch(`https://api.github.com/repos/${CONFIG.OWNER}/${CONFIG.REPO}/issues/${number}/comments`);
+                    if (!res.ok) return [];
+                    const comments = await res.json();
+                    return comments.map(c => ({
+                        user: { login: c.user.login },
+                        created_at: c.created_at,
+                        body: c.body || ''
+                    }));
+                } catch(e) {
+                    return [];
+                }
+            },
+
             async getBoards() {
                 const data = await this.fetchJson('boards');
                 return data || MOCK_BOARDS;
             },
+
             async getThreads(boardName) {
+                // Try JSON first
                 const type = boardName ? `board-${boardName}` : 'index';
                 const data = await this.fetchJson(`threads/${type}`);
-                return data ? data.threads : MOCK_THREADS;
-            },
-            async getThreadDetail(number) {
-                const thread = await this.fetchJson(`thread/${number}`);
-                const comments = await this.fetchJson(`comments/${number}`);
+                if (data) return data.threads;
+
+                // Fallback to GitHub API (Real-time)
+                console.log('Fetching from GitHub API...');
+                let allIssues = await this.fetchGitHubIssues();
                 
+                // Filter by board
+                if (boardName) {
+                    return allIssues.filter(t => {
+                        return t.labels.some(l => 
+                            l === `board:${boardName}` || l === boardName
+                        );
+                    });
+                } else {
+                    // Index (All boards)
+                    return allIssues; 
+                }
+            },
+
+            async getThreadDetail(number) {
+                // Try JSON first
+                let thread = await this.fetchJson(`thread/${number}`);
+                let comments = await this.fetchJson(`comments/${number}`);
+
+                if (!thread) {
+                    // Fallback to GitHub API
+                    // We can reuse fetchGitHubIssues or fetch single issue. Fetching single is better.
+                    try {
+                        const res = await fetch(`https://api.github.com/repos/${CONFIG.OWNER}/${CONFIG.REPO}/issues/${number}`);
+                        if (res.ok) {
+                            const issue = await res.json();
+                            thread = {
+                                number: issue.number,
+                                title: issue.title,
+                                user: { login: issue.user.login },
+                                labels: issue.labels.map(l => l.name),
+                                created_at: issue.created_at,
+                                updated_at: issue.updated_at,
+                                body: issue.body || ''
+                            };
+                            comments = await this.fetchGitHubComments(number);
+                        }
+                    } catch(e) { console.error(e); }
+                }
+
                 if (thread) {
                     thread.commentList = comments || [];
                     return thread;
                 }
-                // Fallback to mock search
-                return MOCK_THREADS.find(t => t.number === Number(number));
+                return null;
             },
+
             async search(query) {
                  const index = await this.fetchJson('search_index');
-                 if (!index) return []; // Cannot search without index
+                 if (!index) return [];
                  const terms = query.toLowerCase().split(/\s+/);
                  return index.filter(item => {
                     const text = (item.title + ' ' + (item.body || '')).toLowerCase();
@@ -415,8 +481,6 @@
 
         async function renderSidebar() {
             const list = document.getElementById('board-list');
-            // Avoid re-fetching if already populated and just switching views? 
-            // For simplicity, re-render but api will be fast or cached by browser
             const boards = await api.getBoards();
             
             list.innerHTML = '';
@@ -432,7 +496,7 @@
                 state.currentBoard = null;
                 state.view = 'index';
                 renderMain();
-                renderSidebar(); // Re-render to update active state
+                renderSidebar();
             };
             liAll.appendChild(aAll);
             list.appendChild(liAll);
@@ -494,21 +558,25 @@
             const btn = document.createElement('button');
             btn.className = 'btn primary';
             btn.textContent = state.currentBoard ? `「${state.currentBoard}」にスレを立てる` : 'スレを立てる';
+            
+            // URL creation with explicit labels
             btn.onclick = () => {
-                let template = 'board_zatsudan.yml';
-                if (state.currentBoard === '技術') template = 'board_gijutsu.yml';
-                else if (state.currentBoard === '制作') template = 'board_seisaku.yml';
-                else if (state.currentBoard === '告知') template = 'board_kokuchi.yml';
+                const owner = CONFIG.OWNER;
+                const repo = CONFIG.REPO;
                 
-                // Allow "スレを立てる" from All Boards to default to Zatsudan
-                const url = `https://github.com/${CONFIG.OWNER}/${CONFIG.REPO}/issues/new?template=${template}`;
+                // If a specific board is selected, use that label. Otherwise default to '雑談'
+                const boardName = state.currentBoard || '雑談';
+                const label = `board:${boardName}`;
+                
+                // Use `labels` param directly to force label assignment
+                const url = `https://github.com/${owner}/${repo}/issues/new?title=&body=内容をここに書いてください&labels=${encodeURIComponent(label)}`;
                 window.open(url, '_blank');
             };
             headerDiv.appendChild(btn);
             container.appendChild(headerDiv);
 
             if (!threads || threads.length === 0) {
-                container.innerHTML += '<p style="padding:1rem">スレッドがありません。GitHubでIssueを作成してActionを実行してください。</p>';
+                container.innerHTML += '<p style="padding:1rem">スレッドがありません。</p>';
                 return;
             }
 
@@ -542,10 +610,18 @@
             const card = document.createElement('div');
             card.className = 'card thread-item';
             
-            // Determine board label
-            const boardLabelRaw = t.labels.find(l => typeof l === 'string' ? l.startsWith('board:') : l.name.startsWith('board:'));
-            const boardLabel = boardLabelRaw ? (typeof boardLabelRaw === 'string' ? boardLabelRaw : boardLabelRaw.name).replace('board:', '') : '';
-            const isPinned = t.labels.includes('pinned');
+            // Determine board label safely
+            let boardLabel = '';
+            const boardLabelRaw = t.labels.find(l => {
+                const name = typeof l === 'string' ? l : l.name;
+                return name.startsWith('board:');
+            });
+            if (boardLabelRaw) {
+                const name = typeof boardLabelRaw === 'string' ? boardLabelRaw : boardLabelRaw.name;
+                boardLabel = name.replace('board:', '');
+            }
+
+            const isPinned = t.labels.includes('pinned') || t.labels.some(l => l.name === 'pinned');
             
             card.innerHTML = `
                 <h3>
@@ -564,7 +640,7 @@
                 e.preventDefault();
                 state.currentThreadId = t.number;
                 state.view = 'thread';
-                renderApp(); // This will trigger renderMain which calls getThreadDetail
+                renderApp(); 
             };
             return card;
         }
