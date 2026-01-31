@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XNH_BBS(仮)</title>
+    <!-- Markdown Parser -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #f6f8fa;
+            --card-bg: #ffffff;
+            --text-color: #24292f;
+            --link-color: #0969da;
+            --border-color: #d0d7de;
+            --meta-color: #57606a;
+            --accent-color: #2da44e;
+            --header-bg: #24292f;
+            --header-text: #ffffff;
+            --sidebar-width: 250px;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #0d1117;
+            --card-bg: #161b22;
+            --text-color: #c9d1d9;
+            --link-color: #58a6ff;
+            --border-color: #30363d;
+            --meta-color: #8b949e;
+            --accent-color: #238636;
+            --header-bg: #161b22;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            line-height: 1.5;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        a { color: var(--link-color); text-decoration: none; cursor: pointer; }
+        a:hover { text-decoration: underline; }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        /* Header */
+        .site-header {
+            background: var(--header-bg);
+            color: var(--header-text);
+            padding: 0.75rem 0;
+            margin-bottom: 1.5rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .site-header .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo { font-size: 1.25rem; font-weight: bold; color: #fff; text-decoration: none; }
+        .nav-links a { color: #ccc; margin-left: 1rem; font-size: 0.9rem; }
+        .nav-links a:hover { color: #fff; }
+        .nav-links a.active { color: #fff; font-weight: bold; }
+
+        /* Layout */
+        .main-layout {
+            display: flex;
+            gap: 2rem;
+            min-height: 80vh;
+        }
+        .sidebar {
+            width: var(--sidebar-width);
+            flex-shrink: 0;
+        }
+        .content {
+            flex-grow: 1;
+            min-width: 0;
+        }
+
+        @media (max-width: 768px) {
+            .main-layout { flex-direction: column; }
+            .sidebar { width: 100%; margin-bottom: 1rem; }
+        }
+
+        /* Components */
+        .btn {
+            display: inline-block;
+            padding: 5px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 20px;
+            border: 1px solid rgba(27,31,36,0.15);
+            border-radius: 6px;
+            cursor: pointer;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            transition: 0.2s;
+        }
+        .btn:hover { background-color: var(--border-color); }
+        .btn.primary {
+            background-color: var(--accent-color);
+            color: #ffffff;
+            border-color: rgba(27,31,36,0.15);
+        }
+        .btn.primary:hover { opacity: 0.9; text-decoration: none; }
+        .btn.large {
+            padding: 0.75rem 1.5rem;
+            font-size: 1.1rem;
+            width: 100%;
+            text-align: center;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0 7px;
+            font-size: 12px;
+            font-weight: 500;
+            line-height: 18px;
+            border-radius: 2em;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-color);
+            color: var(--meta-color);
+            margin-right: 0.5rem;
+        }
+        .badge.pinned {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+        }
+
+        /* Lists */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+        }
+        .thread-item h3 { margin: 0 0 0.5rem 0; font-size: 1.1rem; }
+        .thread-meta { font-size: 0.85rem; color: var(--meta-color); margin-top: 0.5rem; }
+        
+        .divider-title {
+            display: flex;
+            align-items: center;
+            color: var(--meta-color);
+            font-size: 0.85rem;
+            margin: 1.5rem 0 0.5rem;
+            font-weight: bold;
+        }
+        .divider-title::after {
+            content: "";
+            flex: 1;
+            border-bottom: 1px dashed var(--border-color);
+            margin-left: 0.5rem;
+        }
+
+        /* Post */
+        .post {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 6px;
+            position: relative;
+        }
+        .post:target, .post.highlight {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(45, 164, 78, 0.4);
+        }
+        .post-header {
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
+            font-size: 0.9rem;
+            color: var(--meta-color);
+            display: flex;
+            justify-content: space-between;
+        }
+        .res-number { font-weight: bold; color: var(--text-color); margin-right: 0.5rem; }
+        .post-body { overflow-wrap: break-word; }
+        .post-body img { max-width: 100%; height: auto; border-radius: 4px; }
+        .post-body pre { background: var(--bg-color); padding: 0.75rem; overflow-x: auto; border-radius: 4px; }
+        .post-body blockquote { border-left: 4px solid var(--border-color); margin: 0; padding-left: 1rem; color: var(--meta-color); }
+        .post-body p { margin-top: 0; margin-bottom: 0.8rem; }
+        .post-body p:last-child { margin-bottom: 0; }
+
+        /* Nav */
+        .nav-list { list-style: none; padding: 0; margin: 0; }
+        .nav-list li { margin-bottom: 0.25rem; }
+        .nav-list a {
+            display: block;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            color: var(--text-color);
+            transition: background 0.2s;
+        }
+        .nav-list a:hover { background-color: var(--border-color); text-decoration: none; }
+        .nav-list a.active { background-color: var(--accent-color); color: white; }
+
+        /* Forms */
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; margin-bottom: 0.3rem; font-weight: bold; font-size: 0.9rem; }
+        .form-control {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: var(--card-bg);
+            color: var(--text-color);
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+        .notice { font-size: 0.85rem; color: var(--meta-color); margin-bottom: 1rem; }
+        
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+        .page-header h2 { margin: 0; }
+
+        .search-box {
+            margin-bottom: 2rem;
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+        
+        /* Utility */
+        .hidden { display: none; }
+        .loading { text-align: center; padding: 2rem; color: var(--meta-color); }
+    </style>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body>
+    <header class="site-header">
+        <div class="container">
+            <a href="#" class="logo" id="logo-link">XNH_BBS(仮)</a>
+            <nav class="nav-links">
+                <a href="#" id="nav-new" class="active">新着</a>
+                <a href="#" id="nav-search">検索</a>
+                <a href="#" id="nav-settings">設定</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container main-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="card">
+                <h3>板一覧</h3>
+                <ul class="nav-list" id="board-list">
+                    <!-- JSで描画 -->
+                    <li><span style="padding:0.5rem">読み込み中...</span></li>
+                </ul>
+            </div>
+            <div style="font-size: 0.8rem; color: var(--meta-color); padding: 0.5rem;">
+                <p>※データはGitHub Actionsにより定期的に更新されます。</p>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="content" id="main-content">
+            <div class="loading">読み込み中...</div>
+        </main>
+    </div>
+
+    <footer style="text-align: center; padding: 2rem; font-size: 0.8rem; color: var(--meta-color);">
+        <p>Powered by GitHub Pages & Issues</p>
+    </footer>
+
+    <!-- Application Logic -->
+    <script>
+        // --- Configuration ---
+        // 自分のリポジトリ情報に書き換えてください
+        const CONFIG = {
+            OWNER: 'YOUR_ORG',
+            REPO: 'YOUR_REPO',
+            SITE_NAME: 'XNH_BBS(仮)'
+        };
+
+        // --- Mock Data (Fallback) ---
+        const MOCK_BOARDS = [
+            { id: 'zatsudan', name: '雑談', desc: '何でもありの雑談板' },
+            { id: 'gijutsu', name: '技術', desc: 'プログラミング等の技術話' },
+            { id: 'seisaku', name: '制作', desc: '作ったものを晒す板' },
+            { id: 'kokuchi', name: '告知', desc: '運営からのお知らせ' },
+        ];
+
+        const MOCK_THREADS = [
+            {
+                number: 101,
+                title: '【Welcome】この掲示板の使い方',
+                user: { login: 'admin' },
+                labels: ['board:告知', 'pinned'],
+                state: 'open',
+                comments: 0,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                body: 'ここはGitHub Issuesを利用した掲示板です。\n\n### 使い方\n1. 左のメニューから板を選びます。\n2. 「スレを立てる」ボタンからGitHubに飛び、Issueを作成します。\n3. 自動的にここに反映されます（反映には時間がかかります）。',
+                commentList: []
+            }
+        ];
+
+        // --- State Management ---
+        const state = {
+            view: 'index', // index, thread, search, settings
+            currentBoard: null,
+            currentThreadId: null,
+            loading: false
+        };
+
+        // --- Helpers ---
+        function formatDate(isoString) {
+            if (!isoString) return '';
+            return new Date(isoString).toLocaleString('ja-JP', {
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit'
+            });
+        }
+
+        function parseMarkdown(text) {
+            if (!text) return '';
+            if (window.marked) {
+                let html = window.marked.parse(text);
+                // Convert anchor links >>123
+                html = html.replace(/&gt;&gt;(\d+)/g, '<a href="#res$1" class="anchor-link" onclick="scrollToRes($1); return false;">>>$1</a>');
+                return html;
+            }
+            return text.replace(/\n/g, '<br>');
+        }
+
+        function scrollToRes(num) {
+            const el = document.getElementById(`res${num}`);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth' });
+                el.classList.add('highlight');
+                setTimeout(() => el.classList.remove('highlight'), 2000);
+            } else {
+                alert('そのレスはこのページに存在しません。');
+            }
+        }
+
+        function getProfile() {
+            return JSON.parse(localStorage.getItem('ghub_bbs_profile') || '{}');
+        }
+
+        // --- API Service ---
+        const api = {
+            async fetchJson(path) {
+                try {
+                    const res = await fetch(`data/${path}.json?t=${Date.now()}`); // Simple cache buster
+                    if (!res.ok) throw new Error(res.statusText);
+                    return await res.json();
+                } catch (e) {
+                    console.log(`[Data Fetch Info] Could not load ${path}. Using mock data if available.`);
+                    return null;
+                }
+            },
+            async getBoards() {
+                const data = await this.fetchJson('boards');
+                return data || MOCK_BOARDS;
+            },
+            async getThreads(boardName) {
+                const type = boardName ? `board-${boardName}` : 'index';
+                const data = await this.fetchJson(`threads/${type}`);
+                return data ? data.threads : MOCK_THREADS;
+            },
+            async getThreadDetail(number) {
+                const thread = await this.fetchJson(`thread/${number}`);
+                const comments = await this.fetchJson(`comments/${number}`);
+                
+                if (thread) {
+                    thread.commentList = comments || [];
+                    return thread;
+                }
+                // Fallback to mock search
+                return MOCK_THREADS.find(t => t.number === Number(number));
+            },
+            async search(query) {
+                 const index = await this.fetchJson('search_index');
+                 if (!index) return []; // Cannot search without index
+                 const terms = query.toLowerCase().split(/\s+/);
+                 return index.filter(item => {
+                    const text = (item.title + ' ' + (item.body || '')).toLowerCase();
+                    return terms.every(term => text.includes(term));
+                 });
+            }
+        };
+
+        // --- Rendering ---
+        async function renderApp() {
+            renderHeader();
+            await renderSidebar(); // Load boards first
+            renderMain();
+        }
+
+        function renderHeader() {
+            document.querySelectorAll('.nav-links a').forEach(el => el.classList.remove('active'));
+            if (state.view === 'index') document.getElementById('nav-new').classList.add('active');
+            if (state.view === 'search') document.getElementById('nav-search').classList.add('active');
+            if (state.view === 'settings') document.getElementById('nav-settings').classList.add('active');
+        }
+
+        async function renderSidebar() {
+            const list = document.getElementById('board-list');
+            // Avoid re-fetching if already populated and just switching views? 
+            // For simplicity, re-render but api will be fast or cached by browser
+            const boards = await api.getBoards();
+            
+            list.innerHTML = '';
+
+            // 全板
+            const liAll = document.createElement('li');
+            const aAll = document.createElement('a');
+            aAll.href = "#";
+            aAll.textContent = "全板の新着";
+            if (!state.currentBoard && state.view === 'index') aAll.classList.add('active');
+            aAll.onclick = (e) => {
+                e.preventDefault();
+                state.currentBoard = null;
+                state.view = 'index';
+                renderMain();
+                renderSidebar(); // Re-render to update active state
+            };
+            liAll.appendChild(aAll);
+            list.appendChild(liAll);
+
+            // 各板
+            boards.forEach(b => {
+                const li = document.createElement('li');
+                const a = document.createElement('a');
+                a.href = "#";
+                a.textContent = b.name;
+                if (state.currentBoard === b.name) a.classList.add('active');
+                a.onclick = (e) => {
+                    e.preventDefault();
+                    state.currentBoard = b.name;
+                    state.view = 'index';
+                    renderMain();
+                    renderSidebar();
+                };
+                li.appendChild(a);
+                list.appendChild(li);
+            });
+        }
+
+        async function renderMain() {
+            const main = document.getElementById('main-content');
+            
+            if (state.view === 'settings') {
+                renderSettings(main);
+                return;
+            }
+            if (state.view === 'search') {
+                renderSearch(main);
+                return;
+            }
+
+            // Loading state
+            main.innerHTML = '<div class="loading">読み込み中...</div>';
+
+            if (state.view === 'thread') {
+                const thread = await api.getThreadDetail(state.currentThreadId);
+                if (thread) renderThreadDetail(main, thread);
+                else main.innerHTML = '<p class="loading">エラー: スレッドが見つかりません</p>';
+                return;
+            }
+
+            // Index View
+            const threads = await api.getThreads(state.currentBoard);
+            renderThreadList(main, threads);
+        }
+
+        function renderThreadList(container, threads) {
+            container.innerHTML = '';
+            
+            // Header
+            const headerDiv = document.createElement('div');
+            headerDiv.className = 'page-header';
+            headerDiv.innerHTML = `<h2>${state.currentBoard ? state.currentBoard + '板' : '全板の新着'}</h2>`;
+            
+            const btn = document.createElement('button');
+            btn.className = 'btn primary';
+            btn.textContent = state.currentBoard ? `「${state.currentBoard}」にスレを立てる` : 'スレを立てる';
+            btn.onclick = () => {
+                let template = 'board_zatsudan.yml';
+                if (state.currentBoard === '技術') template = 'board_gijutsu.yml';
+                else if (state.currentBoard === '制作') template = 'board_seisaku.yml';
+                else if (state.currentBoard === '告知') template = 'board_kokuchi.yml';
+                
+                // Allow "スレを立てる" from All Boards to default to Zatsudan
+                const url = `https://github.com/${CONFIG.OWNER}/${CONFIG.REPO}/issues/new?template=${template}`;
+                window.open(url, '_blank');
+            };
+            headerDiv.appendChild(btn);
+            container.appendChild(headerDiv);
+
+            if (!threads || threads.length === 0) {
+                container.innerHTML += '<p style="padding:1rem">スレッドがありません。GitHubでIssueを作成してActionを実行してください。</p>';
+                return;
+            }
+
+            // Pinned
+            const pinned = threads.filter(t => t.labels.includes('pinned'));
+            const normal = threads.filter(t => !t.labels.includes('pinned'));
+
+            if (pinned.length > 0) {
+                const divTitle = document.createElement('div');
+                divTitle.className = 'divider-title';
+                divTitle.textContent = '固定スレッド';
+                container.appendChild(divTitle);
+                pinned.forEach(t => container.appendChild(createThreadItem(t)));
+            }
+
+            const divTitleNormal = document.createElement('div');
+            divTitleNormal.className = 'divider-title';
+            divTitleNormal.textContent = '新着スレッド';
+            container.appendChild(divTitleNormal);
+
+            if (normal.length === 0) {
+                const p = document.createElement('p');
+                p.textContent = 'スレッドがありません。';
+                container.appendChild(p);
+            } else {
+                normal.forEach(t => container.appendChild(createThreadItem(t)));
+            }
+        }
+
+        function createThreadItem(t) {
+            const card = document.createElement('div');
+            card.className = 'card thread-item';
+            
+            // Determine board label
+            const boardLabelRaw = t.labels.find(l => typeof l === 'string' ? l.startsWith('board:') : l.name.startsWith('board:'));
+            const boardLabel = boardLabelRaw ? (typeof boardLabelRaw === 'string' ? boardLabelRaw : boardLabelRaw.name).replace('board:', '') : '';
+            const isPinned = t.labels.includes('pinned');
+            
+            card.innerHTML = `
+                <h3>
+                    ${isPinned ? '<span class="badge pinned">固定</span>' : ''}
+                    <a href="#" class="thread-link">${t.title}</a>
+                </h3>
+                <div class="thread-meta">
+                    ${boardLabel ? `<span class="badge">${boardLabel}</span>` : ''}
+                    <span>レス: ${t.comments}</span> / 
+                    <span> 作成: ${t.user.login}</span> / 
+                    <span> 更新: ${formatDate(t.updated_at)}</span>
+                </div>
+            `;
+            
+            card.querySelector('.thread-link').onclick = (e) => {
+                e.preventDefault();
+                state.currentThreadId = t.number;
+                state.view = 'thread';
+                renderApp(); // This will trigger renderMain which calls getThreadDetail
+            };
+            return card;
+        }
+
+        function renderThreadDetail(container, t) {
+            container.innerHTML = '';
+            
+            // Header
+            const header = document.createElement('div');
+            header.className = 'page-header';
+            
+            const backLink = document.createElement('a');
+            backLink.href = '#';
+            backLink.textContent = '← 戻る';
+            backLink.style.marginRight = '1rem';
+            backLink.onclick = (e) => { e.preventDefault(); state.view = 'index'; renderMain(); };
+
+            const h2 = document.createElement('h2');
+            h2.style.flexGrow = '1';
+            h2.textContent = t.title;
+
+            const ghLink = document.createElement('a');
+            ghLink.href = `https://github.com/${CONFIG.OWNER}/${CONFIG.REPO}/issues/${t.number}`;
+            ghLink.target = '_blank';
+            ghLink.rel = 'noopener';
+            ghLink.className = 'btn';
+            ghLink.textContent = 'GitHubで見る';
+
+            header.appendChild(backLink);
+            header.appendChild(h2);
+            header.appendChild(ghLink);
+            container.appendChild(header);
+
+            // Posts
+            const postsContainer = document.createElement('div');
+            postsContainer.className = 'posts-container';
+
+            // Res 1
+            postsContainer.innerHTML += createPostHtml(1, t.user.login, t.created_at, t.body, true);
+
+            // Comments
+            if (t.commentList) {
+                t.commentList.forEach((c, idx) => {
+                    postsContainer.innerHTML += createPostHtml(idx + 2, c.user.login, c.created_at, c.body);
+                });
+            }
+
+            container.appendChild(postsContainer);
+
+            // Reply Section
+            const profile = getProfile();
+            const replyDiv = document.createElement('div');
+            replyDiv.className = 'card reply-section';
+            replyDiv.innerHTML = `
+                <h3>レスを投稿する</h3>
+                <p class="notice">
+                    投稿にはGitHubアカウントが必要です。下のボタンを押すとGitHubのIssueページへ移動します。<br/>
+                    現在の設定名: <strong>${profile.handle || '設定なし'}</strong> (署名に使われます)
+                </p>
+                <a href="https://github.com/${CONFIG.OWNER}/${CONFIG.REPO}/issues/${t.number}#new_comment_field" target="_blank" rel="noopener" class="btn primary large">
+                    GitHubで返信する
+                </a>
+            `;
+            container.appendChild(replyDiv);
+        }
+
+        function createPostHtml(num, user, date, body, isAdmin = false) {
+            const adminBadge = (user === 'admin' || isAdmin && user === 'admin') ? '<span class="badge pinned" style="margin-left:0.5rem">Admin</span>' : '';
+            return `
+                <div class="post" id="res${num}">
+                    <div class="post-header">
+                        <div>
+                            <span class="res-number">${num}</span>
+                            <span style="font-weight: bold">${user}</span>
+                            ${adminBadge}
+                        </div>
+                        <div>${formatDate(date)}</div>
+                    </div>
+                    <div class="post-body">
+                        ${parseMarkdown(body)}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderSettings(container) {
+            container.innerHTML = '';
+            const profile = getProfile();
+
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.style.maxWidth = '600px';
+            card.style.margin = '0 auto';
+            card.innerHTML = `
+                <h2>ユーザー設定</h2>
+                <p class="notice">この設定はブラウザ(LocalStorage)に保存されます。</p>
+                
+                <div class="form-group">
+                    <label>表示名 (Handle)</label>
+                    <input class="form-control" id="input-handle" value="${profile.handle || ''}" placeholder="名無しさん">
+                </div>
+                
+                <div class="form-group">
+                    <label>自己紹介 / 署名</label>
+                    <textarea class="form-control" rows="3" id="input-bio" placeholder="よろしくお願いします">${profile.bio || ''}</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>テーマ</label>
+                    <select class="form-control" id="input-theme">
+                        <option value="auto" ${profile.theme === 'auto' ? 'selected' : ''}>システムに従う (Auto)</option>
+                        <option value="light" ${profile.theme === 'light' ? 'selected' : ''}>ライト (Light)</option>
+                        <option value="dark" ${profile.theme === 'dark' ? 'selected' : ''}>ダーク (Dark)</option>
+                    </select>
+                </div>
+
+                <button class="btn primary" id="btn-save">設定を保存</button>
+                <span id="msg-save" style="margin-left: 1rem; color: var(--accent-color);"></span>
+            `;
+
+            container.appendChild(card);
+
+            document.getElementById('btn-save').onclick = () => {
+                const handle = document.getElementById('input-handle').value;
+                const bio = document.getElementById('input-bio').value;
+                const theme = document.getElementById('input-theme').value;
+
+                localStorage.setItem('ghub_bbs_profile', JSON.stringify({ handle, bio, theme }));
+                applyTheme();
+                
+                const msg = document.getElementById('msg-save');
+                msg.textContent = '保存しました！';
+                setTimeout(() => msg.textContent = '', 2000);
+            };
+        }
+
+        function renderSearch(container) {
+            container.innerHTML = `
+                <div class="search-box">
+                    <h2>スレッド検索</h2>
+                    <form id="search-form" style="display: flex; gap: 0.5rem;">
+                        <input class="form-control" id="search-input" placeholder="キーワードを入力...">
+                        <button type="submit" class="btn primary">検索</button>
+                    </form>
+                </div>
+                <div id="search-results"></div>
+            `;
+
+            document.getElementById('search-form').onsubmit = async (e) => {
+                e.preventDefault();
+                const query = document.getElementById('search-input').value;
+                if (!query.trim()) return;
+
+                const resultsDiv = document.getElementById('search-results');
+                resultsDiv.innerHTML = '<div class="loading">検索中...</div>';
+
+                const results = await api.search(query);
+                resultsDiv.innerHTML = '';
+                
+                if (results.length === 0) {
+                    resultsDiv.innerHTML = '<p>見つかりませんでした。</p>';
+                } else {
+                    results.forEach(t => resultsDiv.appendChild(createThreadItem(t)));
+                }
+            };
+        }
+
+        function applyTheme() {
+            const p = getProfile();
+            const theme = p.theme || 'auto';
+            if (theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+            else if (theme === 'light') document.documentElement.removeAttribute('data-theme');
+            else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+            }
+        }
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            applyTheme();
+
+            // Nav Listeners
+            document.getElementById('logo-link').onclick = (e) => { e.preventDefault(); state.currentBoard = null; state.view = 'index'; renderMain(); renderSidebar(); };
+            document.getElementById('nav-new').onclick = (e) => { e.preventDefault(); state.currentBoard = null; state.view = 'index'; renderMain(); renderSidebar(); };
+            document.getElementById('nav-search').onclick = (e) => { e.preventDefault(); state.view = 'search'; renderMain(); renderHeader(); };
+            document.getElementById('nav-settings').onclick = (e) => { e.preventDefault(); state.view = 'settings'; renderMain(); renderHeader(); };
+
+            // Initial Render
+            renderApp();
+        });
+
+    </script>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>
