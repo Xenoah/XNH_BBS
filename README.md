@@ -1,3 +1,4 @@
+リンク
 https://xenoah.github.io/XNH_BBS/
 
 
