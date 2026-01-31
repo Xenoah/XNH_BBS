@@ -103,8 +103,10 @@
             background-color: var(--card-bg);
             color: var(--text-color);
             transition: 0.2s;
+            text-align: center;
+            text-decoration: none; /* For A tag */
         }
-        .btn:hover { background-color: var(--border-color); }
+        .btn:hover { background-color: var(--border-color); text-decoration: none; }
         .btn.primary {
             background-color: var(--accent-color);
             color: #ffffff;
@@ -266,7 +268,7 @@
                 </ul>
             </div>
             <div style="font-size: 0.8rem; color: var(--meta-color); padding: 0.5rem;">
-                <p>※JSONデータがない場合、GitHub APIから直接取得します。</p>
+                <p>※GitHubのラベル(board:〇〇)から板を自動取得します。</p>
             </div>
         </aside>
 
@@ -394,6 +396,31 @@
             },
 
             async getBoards() {
+                // 1. GitHub APIからラベルを取得して動的に板リストを生成
+                try {
+                    const res = await fetch(`https://api.github.com/repos/${CONFIG.OWNER}/${CONFIG.REPO}/labels?per_page=100`);
+                    if (res.ok) {
+                        const labels = await res.json();
+                        // "board:" で始まるラベルを抽出
+                        const boardLabels = labels
+                            .filter(l => l.name.startsWith('board:'))
+                            .map(l => ({
+                                id: l.name.replace('board:', ''),
+                                name: l.name.replace('board:', ''),
+                                desc: l.description || ''
+                            }));
+                        
+                        if (boardLabels.length > 0) {
+                            // 名前順にソート (任意)
+                            boardLabels.sort((a, b) => a.name.localeCompare(b.name));
+                            return boardLabels;
+                        }
+                    }
+                } catch (e) {
+                    console.warn("GitHub Labels fetch failed, falling back to static/mock.", e);
+                }
+
+                // 2. 失敗時は静的JSONまたはモック
                 const data = await this.fetchJson('boards');
                 return data || MOCK_BOARDS;
             },
@@ -496,7 +523,7 @@
                 state.currentBoard = null;
                 state.view = 'index';
                 renderMain();
-                renderSidebar();
+                renderSidebar(); // Re-render to update active state
             };
             liAll.appendChild(aAll);
             list.appendChild(liAll);
@@ -544,10 +571,11 @@
 
             // Index View
             const threads = await api.getThreads(state.currentBoard);
-            renderThreadList(main, threads);
+            const boards = await api.getBoards(); // Pass boards info for URL generation
+            renderThreadList(main, threads, boards);
         }
 
-        function renderThreadList(container, threads) {
+        function renderThreadList(container, threads, boards) {
             container.innerHTML = '';
             
             // Header
@@ -555,23 +583,22 @@
             headerDiv.className = 'page-header';
             headerDiv.innerHTML = `<h2>${state.currentBoard ? state.currentBoard + '板' : '全板の新着'}</h2>`;
             
-            const btn = document.createElement('button');
+            // Determine board config
+            const boardName = state.currentBoard || '雑談';
+            const currentBoardObj = (boards || []).find(b => b.name === boardName) || { id: 'zatsudan' };
+            const template = `board_${currentBoardObj.id}.yml`;
+            const label = `board:${boardName}`;
+            const owner = CONFIG.OWNER;
+            const repo = CONFIG.REPO;
+
+            // Use A tag instead of button + window.open for better reliability
+            const btn = document.createElement('a');
             btn.className = 'btn primary';
             btn.textContent = state.currentBoard ? `「${state.currentBoard}」にスレを立てる` : 'スレを立てる';
-            
-            // URL creation with explicit labels
-            btn.onclick = () => {
-                const owner = CONFIG.OWNER;
-                const repo = CONFIG.REPO;
-                
-                // If a specific board is selected, use that label. Otherwise default to '雑談'
-                const boardName = state.currentBoard || '雑談';
-                const label = `board:${boardName}`;
-                
-                // Use `labels` param directly to force label assignment
-                const url = `https://github.com/${owner}/${repo}/issues/new?title=&body=内容をここに書いてください&labels=${encodeURIComponent(label)}`;
-                window.open(url, '_blank');
-            };
+            btn.href = `https://github.com/${owner}/${repo}/issues/new?template=${template}&labels=${encodeURIComponent(label)}`;
+            btn.target = '_blank';
+            btn.rel = 'noopener';
+
             headerDiv.appendChild(btn);
             container.appendChild(headerDiv);
 
