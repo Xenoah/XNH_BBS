@@ -148,6 +148,45 @@
         }
         .thread-item h3 { margin: 0 0 0.5rem 0; font-size: 1.1rem; }
         .thread-meta { font-size: 0.85rem; color: var(--meta-color); margin-top: 0.5rem; }
+        .thread-summary { margin: 0.25rem 0 0; color: var(--meta-color); font-size: 0.92rem; }
+
+        .home-hero {
+            background: linear-gradient(135deg, rgba(45,164,78,0.14), rgba(9,105,218,0.10) 52%, rgba(130,80,223,0.12));
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+        }
+        .home-hero h2 { margin: 0 0 0.4rem; font-size: 1.45rem; }
+        .home-hero p { margin: 0; color: var(--meta-color); }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 0.75rem;
+            margin: 1rem 0 1.25rem;
+        }
+        .info-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 0.85rem;
+        }
+        .info-card strong { display: block; margin-bottom: 0.2rem; }
+        .info-card span { color: var(--meta-color); font-size: 0.88rem; }
+        .link-cloud {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.85rem;
+        }
+        .link-cloud a {
+            border: 1px solid var(--border-color);
+            background: var(--card-bg);
+            border-radius: 999px;
+            padding: 0.25rem 0.65rem;
+            font-size: 0.86rem;
+        }
+        .link-cloud a:hover { text-decoration: none; border-color: var(--link-color); }
         
         .divider-title {
             display: flex;
@@ -206,6 +245,8 @@
         }
         .nav-list a:hover { background-color: var(--border-color); text-decoration: none; }
         .nav-list a.active { background-color: var(--accent-color); color: white; }
+        .board-desc { display: block; margin-top: 0.1rem; color: var(--meta-color); font-size: 0.75rem; line-height: 1.35; }
+        .nav-list a.active .board-desc { color: rgba(255,255,255,0.82); }
 
         /* Forms */
         .form-group { margin-bottom: 1rem; }
@@ -293,11 +334,294 @@
 
         // --- Mock Data (Fallback) ---
         const MOCK_BOARDS = [
-            { id: 'zatsudan', name: '雑談', desc: '何でもありの雑談板' },
-            { id: 'gijutsu', name: '技術', desc: 'プログラミング等の技術話' },
-            { id: 'seisaku', name: '制作', desc: '作ったものを晒す板' },
-            { id: 'kokuchi', name: '告知', desc: '運営からのお知らせ' },
+            { id: 'zatsudan', name: '雑談', desc: 'ご意見、感想、思いつき' },
+            { id: 'kokuchi', name: '告知', desc: 'サイト案内と大事なお知らせ' },
+            { id: 'updates', name: '更新履歴', desc: '追加ページ、最近の動き' },
+            { id: 'tools', name: '便利ツール', desc: 'QR、PDF、音声、CADなど' },
+            { id: 'games', name: 'ミニゲーム', desc: '音感、フォント、FPV、俳句' },
+            { id: 'vrchat', name: 'VRChat', desc: 'VR生活、創作、学びの話' },
+            { id: 'models', name: '3Dモデル', desc: '配布モデル、BOOTH、3Dプリント' },
+            { id: 'study', name: 'すたでぃー', desc: '数学、無線、学習メモ' },
+            { id: 'database', name: 'データベース', desc: 'ニュース地図、宇宙機、研究機関' },
+            { id: 'dev', name: '開発メモ', desc: 'GitHub PagesとAI支援開発' },
         ];
+
+        const HOME_LINKS = [
+            { label: 'トップ', url: 'https://xenoah.github.io/top.htm' },
+            { label: 'サイトマップ', url: 'https://xenoah.github.io/sitemap.htm' },
+            { label: 'ポートフォリオ', url: 'https://xenoah.github.io/portfolio.htm' },
+            { label: '更新履歴', url: 'https://xenoah.github.io/changelog.htm' },
+            { label: 'Blog', url: 'https://xenoah.github.io/blog/' },
+            { label: '3Dモデル配布', url: 'https://xenoah.github.io/archive-3dmodels/' },
+        ];
+
+        const LOCAL_THREADS = [
+            {
+                number: 9001,
+                title: '【案内】Xenoahのホームページ総合スレ',
+                user: { login: 'Xenoah' },
+                labels: ['pinned', 'board:告知'],
+                state: 'open',
+                comments: 3,
+                created_at: '2026-06-17T09:00:00+09:00',
+                updated_at: '2026-06-17T21:30:00+09:00',
+                body: [
+                    'XenoahのホームページをBBSから眺めるための総合案内です。',
+                    '',
+                    '- 名前の由来は **Xero-Entropy Nexus of Astral Horizons**。通称「虚律のゼノア」。',
+                    '- 最近の主戦場は3Dプリンター、電子工作、プログラミング練習、VRChat。',
+                    '- 平日夜はVRChatにいることが多め。見かけたら声をかけてOK。',
+                    '- VS Code、GitHub Pages、AI支援で静的サイトとWebアプリを増築中。',
+                    '',
+                    '入口はこちら: [xenoah.github.io](https://xenoah.github.io/) / [サイトマップ](https://xenoah.github.io/sitemap.htm)'
+                ].join('\n')
+            },
+            {
+                number: 9002,
+                title: '2026/06近況: QR Painting Toolと3Dモデル配布サイト',
+                user: { login: 'Xenoah' },
+                labels: ['pinned', 'board:更新履歴'],
+                state: 'open',
+                comments: 2,
+                created_at: '2026-06-17T10:10:00+09:00',
+                updated_at: '2026-06-17T20:42:00+09:00',
+                body: [
+                    '直近の更新ログまとめ。',
+                    '',
+                    '- 2026/06/17: **QR Painting Tool** を追加',
+                    '- 2026/06/05: **3Dモデル配布サイト** のリンクをメニューへ追加',
+                    '- 2026/06/03: ミニゲーム全体に日英SEOメタタグとサイトマップを追加',
+                    '- 2026/06/02: **ABSOLUTE FONT SENSE** を追加',
+                    '',
+                    '詳しくは [更新履歴](https://xenoah.github.io/changelog.htm) へ。'
+                ].join('\n')
+            },
+            {
+                number: 9003,
+                title: '便利ツール総合: QR / PDF / Audio / SVG / GIF / CAD / DTMF / VJ',
+                user: { login: 'Xenoah' },
+                labels: ['board:便利ツール'],
+                state: 'open',
+                comments: 4,
+                created_at: '2026-06-16T21:15:00+09:00',
+                updated_at: '2026-06-17T18:05:00+09:00',
+                body: [
+                    '公開中のツールが増えてきたので用途別メモ。',
+                    '',
+                    '- QRコード読取・生成WEBAPP / QR Painting Tool',
+                    '- PDFエディターWEBAPP: ブラウザ内でページ編集や注釈を扱うLocal-first系',
+                    '- Audio Converter / SVGコンバーター / GIFコンバーター',
+                    '- Omni SciCalc: 便利な電卓',
+                    '- 2D CADモドキ: CAD風UIのプロトタイプ',
+                    '- DTMFコンバーター: プッシュ音と周波数解析の学習ツール',
+                    '- VJ背景簡易映像エフェクトジェネレーター',
+                    '',
+                    '一覧は [サイトマップ](https://xenoah.github.io/sitemap.htm) の「便利ツール」から。'
+                ].join('\n')
+            },
+            {
+                number: 9004,
+                title: 'ミニゲームが音・フォント・ドローンまで広がってきた',
+                user: { login: 'Xenoah' },
+                labels: ['board:ミニゲーム'],
+                state: 'open',
+                comments: 3,
+                created_at: '2026-06-15T22:20:00+09:00',
+                updated_at: '2026-06-17T17:25:00+09:00',
+                body: [
+                    'ミニゲーム棚の見どころ。',
+                    '',
+                    '- **ABSOLUTE FONT SENSE**: 書体当てクイズ',
+                    '- **SYNTH MATCH SPECTRA**: Web Audioで音色を合わせるゲーム',
+                    '- **PERFECT PITCH QUIZ**: 絶対音感トレーニング',
+                    '- **CHORD BREAKER**: 和音聴き取りクイズ',
+                    '- FPVドローンゲーム',
+                    '- ランダム俳句ジェネレーター',
+                    '',
+                    '音系の流れが強いので、今後はスコア共有スレがあると面白そう。'
+                ].join('\n')
+            },
+            {
+                number: 9005,
+                title: 'VRChatは認識拡大ツールだった話',
+                user: { login: 'Xenoah' },
+                labels: ['board:VRChat'],
+                state: 'open',
+                comments: 5,
+                created_at: '2026-06-14T23:05:00+09:00',
+                updated_at: '2026-06-17T16:10:00+09:00',
+                body: [
+                    '[VRChat記事](https://xenoah.github.io/vrchat.htm) の要点。',
+                    '',
+                    '- Quest 2からVRを始め、Beat Saberなどを経てVRChatへ。',
+                    '- 2024年2月ごろから再開し、日本人コミュニティと出会って活動が一気に広がった。',
+                    '- Blender / Unity / アバター改変を通じて、VRChatが実践的な制作環境になった。',
+                    '- ポピー横丁、同期会、哲学カフェなど、居場所と学びの接点が増えた。',
+                    '- 良いところも危ういところも含めて「使い手次第の認識拡大ツール」。',
+                    '',
+                    'VRChat、3D制作、音楽、学び直しの話題はこちらへ。'
+                ].join('\n')
+            },
+            {
+                number: 9006,
+                title: '3Dモデル配布・BOOTHピックアップ',
+                user: { login: 'Xenoah' },
+                labels: ['board:3Dモデル'],
+                state: 'open',
+                comments: 3,
+                created_at: '2026-06-13T20:40:00+09:00',
+                updated_at: '2026-06-16T22:05:00+09:00',
+                body: [
+                    '3Dモデル配布とポートフォリオの見どころ。',
+                    '',
+                    '- VRChat想定アバター「葵那(Aona)」',
+                    '- LEDマトリクスなバッジ',
+                    '- はんだリール作業スタンド',
+                    '- 七輪(しちりん) ～餅を添えて～',
+                    '- 自作ゲーム DODGE THE FALLING',
+                    '- 卓球台 3Dモデル',
+                    '',
+                    '配布一覧: [Xenoah 3Dモデル](https://xenoah.github.io/archive-3dmodels/) / まとめ: [ポートフォリオ](https://xenoah.github.io/portfolio.htm)'
+                ].join('\n')
+            },
+            {
+                number: 9007,
+                title: 'すたでぃー棚: インタラクティブ数学と三陸特',
+                user: { login: 'Xenoah' },
+                labels: ['board:すたでぃー'],
+                state: 'open',
+                comments: 2,
+                created_at: '2026-06-12T19:55:00+09:00',
+                updated_at: '2026-06-16T19:20:00+09:00',
+                body: [
+                    '学習系コンテンツの案内。',
+                    '',
+                    '- インタラクティブ数学: 四則演算、三角関数、N次元座標、フーリエ、コラッツ、線形代数、微積分、カオス、確率、複素解析、素数など',
+                    '- 三陸特 過去問単語帳: 第三級陸上特殊無線技士の学習',
+                    '',
+                    '見て触って覚える系の実験場として育てていきたいところ。'
+                ].join('\n')
+            },
+            {
+                number: 9008,
+                title: 'データベース棚: 世界ニュース地図 / 宇宙機 / 科学研究機関',
+                user: { login: 'Xenoah' },
+                labels: ['board:データベース'],
+                state: 'open',
+                comments: 2,
+                created_at: '2026-06-11T21:10:00+09:00',
+                updated_at: '2026-06-15T20:30:00+09:00',
+                body: [
+                    '自分用DB系の入り口。',
+                    '',
+                    '- [世界ニュースマップ](https://xenoah.github.io/XNH_news-atlas/): ニュース、災害、自然イベントを地図で見る',
+                    '- 日本の人工衛星/探査機DB',
+                    '- 日本の科学研究機関DB',
+                    '',
+                    '地図、時系列、カテゴリ、検索をどう見せるかの実験にもなっている。'
+                ].join('\n')
+            },
+            {
+                number: 9009,
+                title: '開発メモ: Local-firstとGitHub Pagesでどこまで作れるか',
+                user: { login: 'Xenoah' },
+                labels: ['board:開発メモ'],
+                state: 'open',
+                comments: 4,
+                created_at: '2026-06-10T22:00:00+09:00',
+                updated_at: '2026-06-14T18:40:00+09:00',
+                body: [
+                    'ポートフォリオから見える制作スタイル。',
+                    '',
+                    '- 静的Webアプリ、PDF処理、地図UI、VJ/音声処理、2D CAD風UI、学習サイト、ミニゲーム、DBまで横断',
+                    '- 外部サービスに依存しすぎない静的Web構成とブラウザ内処理を重視',
+                    '- ChatGPT / Claude / Codex などを、要件定義、実装指示、レビュー、検証の補助として利用',
+                    '- 「動くURLまで出す」ことを優先',
+                    '',
+                    '詳細: [ポートフォリオ](https://xenoah.github.io/portfolio.htm)'
+                ].join('\n')
+            },
+            {
+                number: 9010,
+                title: 'このBBSに欲しい板・機能・ネタ募集',
+                user: { login: 'Xenoah' },
+                labels: ['board:雑談'],
+                state: 'open',
+                comments: 6,
+                created_at: '2026-06-09T20:25:00+09:00',
+                updated_at: '2026-06-17T13:15:00+09:00',
+                body: [
+                    'GitHub Issuesを掲示板として使う実験場です。',
+                    '',
+                    '欲しいものメモ:',
+                    '',
+                    '- スレッド検索のローカル初期データ対応',
+                    '- 板ごとの説明文',
+                    '- サイト更新履歴との連動',
+                    '- ミニゲームのスコア投稿テンプレート',
+                    '- VRChatワールド・イベント感想スレ',
+                    '',
+                    'BBS自体も育てる対象ということで、思いつき歓迎。'
+                ].join('\n')
+            }
+        ];
+
+        const LOCAL_COMMENTS = {
+            9001: [
+                { user: { login: 'site-map' }, created_at: '2026-06-17T12:05:00+09:00', body: 'まず迷ったら [サイトマップ](https://xenoah.github.io/sitemap.htm) が一番早いです。便利ツール、ゲーム、学習、DBまで一覧できます。' },
+                { user: { login: 'portfolio-bot' }, created_at: '2026-06-17T18:15:00+09:00', body: '制作物の見せ場は [ポートフォリオ](https://xenoah.github.io/portfolio.htm) にまとまっています。FA、Webツール、音、地図、VRChatが混ざっていて濃い。' },
+                { user: { login: 'bbs' }, created_at: '2026-06-17T21:30:00+09:00', body: 'この初期スレッド群は、GitHub APIが取れない時にもBBSが案内板として読めるように入れています。' }
+            ],
+            9002: [
+                { user: { login: 'update-log' }, created_at: '2026-06-17T12:30:00+09:00', body: '6月はQR Painting Tool、3Dモデル配布サイト、ミニゲームSEO、ABSOLUTE FONT SENSEと動きが多め。' },
+                { user: { login: 'memo' }, created_at: '2026-06-17T20:42:00+09:00', body: '更新履歴ページの最終更新日は2026/06/17。' }
+            ],
+            9003: [
+                { user: { login: 'tool-note' }, created_at: '2026-06-16T22:00:00+09:00', body: 'PDFや音声など、ローカル処理で済ませたいツールが多いのが特徴。' },
+                { user: { login: 'dtmf' }, created_at: '2026-06-17T11:12:00+09:00', body: 'DTMFは電子工作・信号処理ネタとしてもBBSで話しやすそう。' },
+                { user: { login: 'vj' }, created_at: '2026-06-17T12:45:00+09:00', body: 'VJ FX MakerはVRChatの音楽・演出話とも接続できそう。' },
+                { user: { login: 'qr' }, created_at: '2026-06-17T18:05:00+09:00', body: 'QR Painting Tool追加でQR系が2本になりました。' }
+            ],
+            9004: [
+                { user: { login: 'sound' }, created_at: '2026-06-16T00:10:00+09:00', body: 'SYNTH MATCH SPECTRA、PERFECT PITCH QUIZ、CHORD BREAKERで音楽系の棚ができてきた。' },
+                { user: { login: 'font' }, created_at: '2026-06-16T20:15:00+09:00', body: 'ABSOLUTE FONT SENSEはフォントを見分ける方向で、音系とは別の感覚ゲーム。' },
+                { user: { login: 'scoreboard' }, created_at: '2026-06-17T17:25:00+09:00', body: 'BBSにスコア報告用テンプレートがあると遊びが広がりそう。' }
+            ],
+            9005: [
+                { user: { login: 'vr-note' }, created_at: '2026-06-15T00:00:00+09:00', body: '記事はかなり長文。出会い、創作、学び、音楽、危うさまで一気に振り返っています。' },
+                { user: { login: 'avatar' }, created_at: '2026-06-15T21:20:00+09:00', body: '自作アバターや改変の話は3Dモデル板とも相性がよさそう。' },
+                { user: { login: 'music' }, created_at: '2026-06-16T19:50:00+09:00', body: 'パリピ砲、DJ、Hard bass、dubstep、hard technoの流れが面白い。' },
+                { user: { login: 'study' }, created_at: '2026-06-17T09:05:00+09:00', body: 'VRChatから放送大学や学び直しの刺激につながる話もある。' },
+                { user: { login: 'bbs' }, created_at: '2026-06-17T16:10:00+09:00', body: 'VRChatのイベント告知やワールド感想用の板に育てられそう。' }
+            ],
+            9006: [
+                { user: { login: 'model-log' }, created_at: '2026-06-14T15:30:00+09:00', body: 'Aona、LEDバッジ、はんだスタンドなど、VRChat向けと実用品が混在しているのが良い。' },
+                { user: { login: 'printer' }, created_at: '2026-06-15T22:20:00+09:00', body: '3Dプリンター作品の改善ログをスレッド化すると制作過程も残せそう。' },
+                { user: { login: 'booth' }, created_at: '2026-06-16T22:05:00+09:00', body: 'BOOTH商品とGitHub Pagesの配布アーカイブの両方に導線がある。' }
+            ],
+            9007: [
+                { user: { login: 'math' }, created_at: '2026-06-13T18:20:00+09:00', body: 'フーリエ、カオス、複素解析、素数あたりは可視化するとかなり楽しいテーマ。' },
+                { user: { login: 'radio' }, created_at: '2026-06-16T19:20:00+09:00', body: '三陸特の単語帳は実用寄り。試験勉強ログにも使えそう。' }
+            ],
+            9008: [
+                { user: { login: 'map' }, created_at: '2026-06-12T21:10:00+09:00', body: '世界ニュースマップは地図UIとデータ更新の実験としても強い。' },
+                { user: { login: 'space' }, created_at: '2026-06-15T20:30:00+09:00', body: '宇宙機DBと研究機関DBは航空宇宙・学術関心の入口になりそう。' }
+            ],
+            9009: [
+                { user: { login: 'dev' }, created_at: '2026-06-11T22:30:00+09:00', body: '静的サイトだけでアプリっぽくする方向性が一貫しています。' },
+                { user: { login: 'ai-assisted' }, created_at: '2026-06-12T21:00:00+09:00', body: 'AI利用は「任せる」より、要件・指示・検証の速度を上げる使い方。' },
+                { user: { login: 'pages' }, created_at: '2026-06-13T10:20:00+09:00', body: 'GitHub Pages公開なので、作ったらすぐURLになるのが強い。' },
+                { user: { login: 'local-first' }, created_at: '2026-06-14T18:40:00+09:00', body: 'PDFや音声のようなファイルは、できるだけブラウザ内で処理する思想。' }
+            ],
+            9010: [
+                { user: { login: 'idea' }, created_at: '2026-06-10T12:00:00+09:00', body: 'ミニゲーム用に「今日の記録」板があると楽しそう。' },
+                { user: { login: 'visitor' }, created_at: '2026-06-11T09:30:00+09:00', body: 'トップページの自己紹介から来た人向けに、はじめての人スレがあると助かる。' },
+                { user: { login: 'vrc' }, created_at: '2026-06-12T22:10:00+09:00', body: 'VRChatのイベント参加ログ、アバター改変ログ、ワールド紹介を分けたい。' },
+                { user: { login: 'tool-user' }, created_at: '2026-06-14T17:45:00+09:00', body: 'ツールの不具合報告テンプレートがあるとGitHub Issuesらしさが出る。' },
+                { user: { login: 'archive' }, created_at: '2026-06-15T19:40:00+09:00', body: '3Dモデルの更新日やライセンス規約への導線もBBSに欲しい。' },
+                { user: { login: 'bbs' }, created_at: '2026-06-17T13:15:00+09:00', body: 'まずは初期データを入れて、空っぽ感を消すところから。' }
+            ]
+        };
 
         // --- State Management ---
         const state = {
@@ -339,6 +663,78 @@
 
         function getProfile() {
             return JSON.parse(localStorage.getItem('ghub_bbs_profile') || '{}');
+        }
+
+        function labelName(label) {
+            return typeof label === 'string' ? label : label.name;
+        }
+
+        function mergeBoards(baseBoards, extraBoards) {
+            const byName = new Map();
+            [...baseBoards, ...extraBoards].forEach(board => {
+                const current = byName.get(board.name);
+                byName.set(board.name, {
+                    ...board,
+                    desc: board.desc || (current && current.desc) || ''
+                });
+            });
+            return Array.from(byName.values());
+        }
+
+        function mergeThreads(primaryThreads, fallbackThreads) {
+            const getTime = thread => {
+                const time = Date.parse(thread.updated_at || thread.created_at || 0);
+                return Number.isNaN(time) ? 0 : time;
+            };
+            const seen = new Set();
+            return [...primaryThreads, ...fallbackThreads]
+                .filter(thread => {
+                    if (seen.has(thread.number)) return false;
+                    seen.add(thread.number);
+                    return true;
+                })
+                .sort((a, b) => getTime(b) - getTime(a));
+        }
+
+        function threadsForBoard(threads, boardName) {
+            if (!boardName) return threads;
+            return threads.filter(t => (t.labels || []).some(l => {
+                const name = labelName(l);
+                return name === `board:${boardName}` || name === boardName;
+            }));
+        }
+
+        function isLocalThread(thread) {
+            return LOCAL_THREADS.some(t => String(t.number) === String(thread.number));
+        }
+
+        function getThreadExternalUrl(thread) {
+            if (!isLocalThread(thread)) {
+                return `https://github.com/${CONFIG.OWNER}/${CONFIG.REPO}/issues/${thread.number}`;
+            }
+
+            const board = ((thread.labels || []).map(labelName).find(l => l.startsWith('board:')) || '').replace('board:', '');
+            const urls = {
+                '告知': 'https://xenoah.github.io/',
+                '更新履歴': 'https://xenoah.github.io/changelog.htm',
+                '便利ツール': 'https://xenoah.github.io/sitemap.htm',
+                'ミニゲーム': 'https://xenoah.github.io/sitemap.htm',
+                'VRChat': 'https://xenoah.github.io/vrchat.htm',
+                '3Dモデル': 'https://xenoah.github.io/archive-3dmodels/',
+                'すたでぃー': 'https://xenoah.github.io/sitemap.htm',
+                'データベース': 'https://xenoah.github.io/sitemap.htm',
+                '開発メモ': 'https://xenoah.github.io/portfolio.htm'
+            };
+            return urls[board] || 'https://xenoah.github.io/';
+        }
+
+        function plainExcerpt(markdown, length = 120) {
+            return (markdown || '')
+                .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+                .replace(/[#*_>`-]/g, '')
+                .replace(/\s+/g, ' ')
+                .trim()
+                .slice(0, length);
         }
 
         // --- API Service ---
@@ -413,7 +809,7 @@
                         if (boardLabels.length > 0) {
                             // 名前順にソート (任意)
                             boardLabels.sort((a, b) => a.name.localeCompare(b.name));
-                            return boardLabels;
+                            return mergeBoards(MOCK_BOARDS, boardLabels);
                         }
                     }
                 } catch (e) {
@@ -422,36 +818,36 @@
 
                 // 2. 失敗時は静的JSONまたはモック
                 const data = await this.fetchJson('boards');
-                return data || MOCK_BOARDS;
+                return data ? mergeBoards(MOCK_BOARDS, data) : MOCK_BOARDS;
             },
 
             async getThreads(boardName) {
                 // Try JSON first
                 const type = boardName ? `board-${boardName}` : 'index';
                 const data = await this.fetchJson(`threads/${type}`);
-                if (data) return data.threads;
+                if (data) return mergeThreads(data.threads, threadsForBoard(LOCAL_THREADS, boardName));
 
                 // Fallback to GitHub API (Real-time)
                 console.log('Fetching from GitHub API...');
                 let allIssues = await this.fetchGitHubIssues();
+                allIssues = mergeThreads(allIssues, LOCAL_THREADS);
                 
                 // Filter by board
-                if (boardName) {
-                    return allIssues.filter(t => {
-                        return t.labels.some(l => 
-                            l === `board:${boardName}` || l === boardName
-                        );
-                    });
-                } else {
-                    // Index (All boards)
-                    return allIssues; 
-                }
+                return threadsForBoard(allIssues, boardName);
             },
 
             async getThreadDetail(number) {
                 // Try JSON first
                 let thread = await this.fetchJson(`thread/${number}`);
                 let comments = await this.fetchJson(`comments/${number}`);
+
+                if (!thread) {
+                    const localThread = LOCAL_THREADS.find(t => String(t.number) === String(number));
+                    if (localThread) {
+                        thread = { ...localThread };
+                        comments = LOCAL_COMMENTS[localThread.number] || [];
+                    }
+                }
 
                 if (!thread) {
                     // Fallback to GitHub API
@@ -483,9 +879,9 @@
 
             async search(query) {
                  const index = await this.fetchJson('search_index');
-                 if (!index) return [];
+                 const searchIndex = index ? mergeThreads(index, LOCAL_THREADS) : LOCAL_THREADS;
                  const terms = query.toLowerCase().split(/\s+/);
-                 return index.filter(item => {
+                 return searchIndex.filter(item => {
                     const text = (item.title + ' ' + (item.body || '')).toLowerCase();
                     return terms.every(term => text.includes(term));
                  });
@@ -533,7 +929,15 @@
                 const li = document.createElement('li');
                 const a = document.createElement('a');
                 a.href = "#";
-                a.textContent = b.name;
+                const name = document.createElement('span');
+                name.textContent = b.name;
+                a.appendChild(name);
+                if (b.desc) {
+                    const desc = document.createElement('span');
+                    desc.className = 'board-desc';
+                    desc.textContent = b.desc;
+                    a.appendChild(desc);
+                }
                 if (state.currentBoard === b.name) a.classList.add('active');
                 a.onclick = (e) => {
                     e.preventDefault();
@@ -577,6 +981,10 @@
 
         function renderThreadList(container, threads, boards) {
             container.innerHTML = '';
+
+            if (!state.currentBoard) {
+                renderHomeIntro(container);
+            }
             
             // Header
             const headerDiv = document.createElement('div');
@@ -633,6 +1041,29 @@
             }
         }
 
+        function renderHomeIntro(container) {
+            const hero = document.createElement('section');
+            hero.className = 'home-hero';
+            hero.innerHTML = `
+                <h2>Xenoahホームページのご意見・雑談BBS</h2>
+                <p>3Dプリンター、電子工作、VRChat、Webツール、ミニゲーム、学習コンテンツ、データベースまで。xenoah.github.io の話題を板ごとに眺められる入口です。</p>
+                <div class="link-cloud">
+                    ${HOME_LINKS.map(link => `<a href="${link.url}" target="_blank" rel="noopener">${link.label}</a>`).join('')}
+                </div>
+            `;
+            container.appendChild(hero);
+
+            const grid = document.createElement('div');
+            grid.className = 'info-grid';
+            grid.innerHTML = `
+                <div class="info-card"><strong>最新更新</strong><span>2026/06/17 QR Painting Toolを追加</span></div>
+                <div class="info-card"><strong>制作物</strong><span>PDF、地図、音声、CAD風UI、VJ、DBを横断</span></div>
+                <div class="info-card"><strong>VRChat</strong><span>出会い、創作、学び、音楽まで長文で振り返り中</span></div>
+                <div class="info-card"><strong>3Dモデル</strong><span>VRChat向け、実用品、3Dプリント配布を整理</span></div>
+            `;
+            container.appendChild(grid);
+        }
+
         function createThreadItem(t) {
             const card = document.createElement('div');
             card.className = 'card thread-item';
@@ -640,21 +1071,23 @@
             // Determine board label safely
             let boardLabel = '';
             const boardLabelRaw = t.labels.find(l => {
-                const name = typeof l === 'string' ? l : l.name;
+                const name = labelName(l);
                 return name.startsWith('board:');
             });
             if (boardLabelRaw) {
-                const name = typeof boardLabelRaw === 'string' ? boardLabelRaw : boardLabelRaw.name;
+                const name = labelName(boardLabelRaw);
                 boardLabel = name.replace('board:', '');
             }
 
-            const isPinned = t.labels.includes('pinned') || t.labels.some(l => l.name === 'pinned');
+            const isPinned = t.labels.some(l => labelName(l) === 'pinned');
+            const excerpt = plainExcerpt(t.body);
             
             card.innerHTML = `
                 <h3>
                     ${isPinned ? '<span class="badge pinned">固定</span>' : ''}
                     <a href="#" class="thread-link">${t.title}</a>
                 </h3>
+                ${excerpt ? `<p class="thread-summary">${excerpt}${excerpt.length >= 120 ? '...' : ''}</p>` : ''}
                 <div class="thread-meta">
                     ${boardLabel ? `<span class="badge">${boardLabel}</span>` : ''}
                     <span>レス: ${t.comments}</span> / 
@@ -690,11 +1123,11 @@
             h2.textContent = t.title;
 
             const ghLink = document.createElement('a');
-            ghLink.href = `https://github.com/${CONFIG.OWNER}/${CONFIG.REPO}/issues/${t.number}`;
+            ghLink.href = getThreadExternalUrl(t);
             ghLink.target = '_blank';
             ghLink.rel = 'noopener';
             ghLink.className = 'btn';
-            ghLink.textContent = 'GitHubで見る';
+            ghLink.textContent = isLocalThread(t) ? '関連ページへ' : 'GitHubで見る';
 
             header.appendChild(backLink);
             header.appendChild(h2);
@@ -719,6 +1152,10 @@
 
             // Reply Section
             const profile = getProfile();
+            const boardLabel = ((t.labels || []).map(labelName).find(l => l.startsWith('board:')) || 'board:雑談').replace('board:', '');
+            const replyHref = isLocalThread(t)
+                ? `https://github.com/${CONFIG.OWNER}/${CONFIG.REPO}/issues/new?labels=${encodeURIComponent(`board:${boardLabel}`)}&title=${encodeURIComponent(t.title)}`
+                : `https://github.com/${CONFIG.OWNER}/${CONFIG.REPO}/issues/${t.number}#new_comment_field`;
             const replyDiv = document.createElement('div');
             replyDiv.className = 'card reply-section';
             replyDiv.innerHTML = `
@@ -727,8 +1164,8 @@
                     投稿にはGitHubアカウントが必要です。下のボタンを押すとGitHubのIssueページへ移動します。<br/>
                     現在の設定名: <strong>${profile.handle || '設定なし'}</strong> (署名に使われます)
                 </p>
-                <a href="https://github.com/${CONFIG.OWNER}/${CONFIG.REPO}/issues/${t.number}#new_comment_field" target="_blank" rel="noopener" class="btn primary large">
-                    GitHubで返信する
+                <a href="${replyHref}" target="_blank" rel="noopener" class="btn primary large">
+                    ${isLocalThread(t) ? 'GitHubでこの話題を書く' : 'GitHubで返信する'}
                 </a>
             `;
             container.appendChild(replyDiv);
